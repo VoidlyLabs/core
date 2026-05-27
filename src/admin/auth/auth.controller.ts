@@ -1,6 +1,13 @@
-import { Body, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Get,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AdminController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
 import { AuthService } from './auth.service';
@@ -26,7 +33,7 @@ export class AuthController {
   }
 
   @Post('/sign-in')
-  @ApiOkResponse({ description: 'Client signed in' })
+  @ApiOkResponse()
   public async signInClient(
     @Body() dto: UserSignInDto,
     @Res({ passthrough: true }) response: Response,
@@ -48,5 +55,35 @@ export class AuthController {
       false,
       'Signed in',
     );
+  }
+
+  @Get('/me')
+  @ApiOkResponse()
+  public async getAuthorizedUser(@Req() request: Request) {
+    const user = await this.authService.getAuthorizedUser(
+      request.headers.authorization,
+      request.headers.cookie,
+    );
+
+    if (!user) {
+      throw new UnauthorizedException(
+        ResponseWrapper.from({}, true, 'Unauthorized'),
+      );
+    }
+
+    return ResponseWrapper.from({ user });
+  }
+
+  @Post('/sign-out')
+  @ApiOkResponse()
+  public signOutClient(@Res({ passthrough: true }) response: Response) {
+    response.clearCookie(process.env.USER_TOKEN_COOKIE, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    });
+
+    return ResponseWrapper.from({}, false, 'Signed out');
   }
 }

@@ -19,6 +19,13 @@ type UserSignInResult = {
   };
 };
 
+type AuthorizedUserResult = {
+  id: string;
+  username: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 @Injectable()
 export class AuthService {
   constructor(private readonly usersService: UsersService) {}
@@ -35,7 +42,7 @@ export class AuthService {
     const document = client as UserDocument;
     const data = document.toObject?.() ?? document;
     const id = data._id.toString();
-    const token = JwtUtility.generateAccessToken(id, 'client');
+    const token = JwtUtility.generateAccessToken(id, 'server');
 
     return {
       token,
@@ -43,6 +50,35 @@ export class AuthService {
         id,
         username: data.username,
       },
+    };
+  }
+
+  public async getAuthorizedUser(
+    authHeader: string | undefined,
+    cookieHeader: string | undefined,
+  ): Promise<AuthorizedUserResult | null> {
+    const id = authHeader?.startsWith('Bearer ')
+      ? await JwtUtility.userIdFromHeader(authHeader)
+      : await JwtUtility.userIdFromCookieHeader(cookieHeader);
+
+    if (!id) {
+      return null;
+    }
+
+    const user = await this.usersService.findById(id);
+
+    if (!user) {
+      return null;
+    }
+
+    const document = user as UserDocument;
+    const data = document.toObject?.() ?? document;
+
+    return {
+      id: data._id.toString(),
+      username: data.username,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
     };
   }
 }

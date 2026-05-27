@@ -1,13 +1,18 @@
-import { Body, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Get,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { CommonController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
 import { AuthService } from './auth.service';
 import { ClientSignInDto } from './dto/client-sign-in.dto';
 import { ConfigUtility } from '../../utility/config/config.utility';
-
-const CLIENT_TOKEN_COOKIE = 'client_access_token';
 
 @ApiTags('Clients Authorization')
 @CommonController('auth')
@@ -26,14 +31,14 @@ export class AuthController {
   }
 
   @Post('/sign-in')
-  @ApiOkResponse({ description: 'Client signed in' })
+  @ApiOkResponse()
   public async signInClient(
     @Body() dto: ClientSignInDto,
     @Res({ passthrough: true }) response: Response,
   ) {
     const result = await this.authService.signInClient(dto);
 
-    response.cookie(CLIENT_TOKEN_COOKIE, result.token, {
+    response.cookie(process.env.CLIENT_TOKEN_COOKIE, result.token, {
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
@@ -48,5 +53,35 @@ export class AuthController {
       false,
       'Signed in',
     );
+  }
+
+  @Get('/me')
+  @ApiOkResponse()
+  public async getAuthorizedClient(@Req() request: Request) {
+    const client = await this.authService.getAuthorizedClient(
+      request.headers.authorization,
+      request.headers.cookie,
+    );
+
+    if (!client) {
+      throw new UnauthorizedException(
+        ResponseWrapper.from({}, true, 'Unauthorized'),
+      );
+    }
+
+    return ResponseWrapper.from({ client });
+  }
+
+  @Post('/sign-out')
+  @ApiOkResponse()
+  public signOutClient(@Res({ passthrough: true }) response: Response) {
+    response.clearCookie(process.env.CLIENT_TOKEN_COOKIE, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    });
+
+    return ResponseWrapper.from({}, false, 'Signed out');
   }
 }

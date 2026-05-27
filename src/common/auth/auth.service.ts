@@ -19,6 +19,13 @@ type ClientSignInResult = {
   };
 };
 
+type AuthorizedClientResult = {
+  id: string;
+  username: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 @Injectable()
 export class AuthService {
   constructor(private readonly clientService: ClientsService) {}
@@ -43,6 +50,35 @@ export class AuthService {
         id,
         username: data.username,
       },
+    };
+  }
+
+  public async getAuthorizedClient(
+    authHeader: string | undefined,
+    cookieHeader: string | undefined,
+  ): Promise<AuthorizedClientResult | null> {
+    const id = authHeader?.startsWith('Bearer ')
+      ? await JwtUtility.clientIdFromHeader(authHeader)
+      : await JwtUtility.clientIdFromCookieHeader(cookieHeader);
+
+    if (!id) {
+      return null;
+    }
+
+    const client = await this.clientService.findById(id);
+
+    if (!client) {
+      return null;
+    }
+
+    const document = client as ClientDocument;
+    const data = document.toObject?.() ?? document;
+
+    return {
+      id: data._id.toString(),
+      username: data.username,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
     };
   }
 }
