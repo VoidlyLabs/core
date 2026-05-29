@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { hash } from 'bcryptjs';
 import { Model, QueryFilter, UpdateQuery } from 'mongoose';
-import { MongooseService } from '../../libs/mongoose';
+import { MongooseService } from '../../services/mongoose';
 import { Client, ClientSchema } from './client.schema';
 import { ConfigUtility } from '../../utility/config/config.utility';
 

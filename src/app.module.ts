@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AdminModule } from './admin/admin.module';
 import { CommonModule } from './common/common.module';
-import { MongooseModule } from './libs/mongoose';
+import { MongooseModule } from './services/mongoose';
 
 @Module({
   imports: [MongooseModule, CommonModule, AdminModule],
