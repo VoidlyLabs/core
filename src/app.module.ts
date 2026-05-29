@@ -4,9 +4,10 @@ import { AppService } from './app.service';
 import { AdminModule } from './admin/admin.module';
 import { CommonModule } from './common/common.module';
 import { MongooseModule } from './services/mongoose';
+import { StorageModule } from './services/storage';
 
 @Module({
-  imports: [MongooseModule, CommonModule, AdminModule],
+  imports: [MongooseModule, StorageModule, CommonModule, AdminModule],
   controllers: [AppController],
   providers: [AppService],
 })

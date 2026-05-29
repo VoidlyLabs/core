@@ -9,4 +9,8 @@ export class ConfigUtility {
   public get(name: string): string {
     return this.configService.getOrThrow<string>(name);
   }
+
+  public getOptional(name: string): string | undefined {
+    return this.configService.get<string>(name);
+  }
 }

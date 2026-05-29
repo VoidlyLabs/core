@@ -2,9 +2,18 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const storagePath = process.env.LOCAL_STORAGE_PATH ?? 'storage/uploads';
+  const storagePublicPath = process.env.LOCAL_STORAGE_PUBLIC_PATH ?? '/uploads';
+
+  app.useStaticAssets(storagePath, {
+    prefix: storagePublicPath.endsWith('/')
+      ? storagePublicPath
+      : `${storagePublicPath}/`,
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
