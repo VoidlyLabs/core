@@ -4,44 +4,23 @@ import { Category } from '../../admin/category/category.schema';
 import { CategoryService } from '../../admin/category/category.service';
 import { CommonController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
-import { Product } from '../products/product.schema';
-import { ProductsService } from '../products/products.service';
-
-type ProductResponse = {
-  id: string;
-  name: string;
-  categoryId: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 type CategoryResponse = {
   id: string;
   name: string;
-  products: ProductResponse[];
   createdAt: Date;
   updatedAt: Date;
 };
-
-type CategoryListItemResponse = Omit<CategoryResponse, 'products'>;
 
 type CategoryDocument = Category & {
   _id: { toString(): string };
   toObject?: () => Category & { _id: { toString(): string } };
 };
 
-type ProductDocument = Product & {
-  _id: { toString(): string };
-  toObject?: () => Product & { _id: { toString(): string } };
-};
-
 @ApiTags('Category')
 @CommonController('category')
 export class CategoryController {
-  constructor(
-    private readonly categoryService: CategoryService,
-    private readonly productsService: ProductsService,
-  ) {}
+  constructor(private readonly categoryService: CategoryService) {}
 
   @Get()
   @ApiOkResponse({ description: 'Categories list' })
@@ -49,12 +28,12 @@ export class CategoryController {
     const categories = await this.categoryService.find();
 
     return ResponseWrapper.from(
-      categories.map((category) => this.serializeListItem(category)),
+      categories.map((category) => this.serialize(category)),
     );
   }
 
   @Get(':id')
-  @ApiOkResponse({ description: 'Category details with products' })
+  @ApiOkResponse({ description: 'Category details' })
   public async findById(@Param('id') id: string) {
     const category = await this.categoryService.findById(id);
 
@@ -62,44 +41,16 @@ export class CategoryController {
       throw new NotFoundException(ResponseWrapper.from({}, true, 'Not found'));
     }
 
-    const products = await this.productsService.findByCategoryId(id);
-
-    return ResponseWrapper.from(this.serialize(category, products));
+    return ResponseWrapper.from(this.serialize(category));
   }
 
-  private serialize(category: Category, products: Product[]): CategoryResponse {
+  private serialize(category: Category): CategoryResponse {
     const document = category as CategoryDocument;
     const data = document.toObject?.() ?? document;
 
     return {
       id: data._id.toString(),
       name: data.name,
-      products: products.map((product) => this.serializeProduct(product)),
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
-    };
-  }
-
-  private serializeListItem(category: Category): CategoryListItemResponse {
-    const document = category as CategoryDocument;
-    const data = document.toObject?.() ?? document;
-
-    return {
-      id: data._id.toString(),
-      name: data.name,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
-    };
-  }
-
-  private serializeProduct(product: Product): ProductResponse {
-    const document = product as ProductDocument;
-    const data = document.toObject?.() ?? document;
-
-    return {
-      id: data._id.toString(),
-      name: data.name,
-      categoryId: data.categoryId.toString(),
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     };

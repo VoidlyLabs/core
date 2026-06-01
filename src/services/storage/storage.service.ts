@@ -48,14 +48,14 @@ export class StorageService {
     return this.publicPath;
   }
 
-  public createImageKey(originalName: string): string {
-    const extension = extname(originalName).toLowerCase();
+  public createImageKey(originalname: string): string {
+    const extension = extname(originalname).toLowerCase();
 
     return `${randomUUID()}${extension}`;
   }
 
   public async saveImage(options: SaveImageOptions): Promise<StoredImage> {
-    const path = this.resolvePath(options.key);
+    const path = this.resolvePath(`${options.key}`);
 
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, options.body);

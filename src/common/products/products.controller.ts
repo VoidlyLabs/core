@@ -1,24 +1,32 @@
 import {
+  BadRequestException,
   Body,
-  Delete,
   Get,
   NotFoundException,
   Param,
-  Patch,
   Post,
+  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
 import { CommonController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
-import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
+import { AuthService } from '../auth/auth.service';
+import { Order } from '../orders/order.schema';
+import { OrdersService } from '../orders/orders.service';
+import { PurchaseProductDto } from './dto/purchase-product.dto';
 import { Product } from './product.schema';
 import { ProductsService } from './products.service';
 
 type ProductResponse = {
   id: string;
-  name: string;
   categoryId: string;
+  name: string;
+  description: string;
+  price: number;
+  isAvailable: boolean;
+  imageUrl: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -28,15 +36,53 @@ type ProductDocument = Product & {
   toObject?: () => Product & { _id: { toString(): string } };
 };
 
+type OrderResponse = {
+  id: string;
+  clientId: string;
+  productId: string;
+  product: {
+    id: string;
+    categoryId: string;
+    name: string;
+    description: string;
+    price: number;
+    imageUrl: string;
+  };
+  quantity: number;
+  totalPrice: number;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type OrderDocument = Order & {
+  _id: { toString(): string };
+  toObject?: () => Order & { _id: { toString(): string } };
+};
+
 @ApiTags('Products')
 @CommonController('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly ordersService: OrdersService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Get()
   @ApiOkResponse({ description: 'Products list' })
   public async find() {
     const products = await this.productsService.find();
+
+    return ResponseWrapper.from(
+      products.map((product) => this.serialize(product)),
+    );
+  }
+
+  @Get('category/:categoryId')
+  @ApiOkResponse({ description: 'Products list by category' })
+  public async findByCategoryId(@Param('categoryId') categoryId: string) {
+    const products = await this.productsService.findByCategoryId(categoryId);
 
     return ResponseWrapper.from(
       products.map((product) => this.serialize(product)),
@@ -55,48 +101,94 @@ export class ProductsController {
     return ResponseWrapper.from(this.serialize(product));
   }
 
-  @Post()
-  @ApiCreatedResponse({ description: 'Product created' })
-  public async create(@Body() dto: CreateProductDto) {
-    const product = await this.productsService.create(dto);
+  @Post('purchase')
+  @ApiCreatedResponse({ description: 'Product order created' })
+  public async purchase(
+    @Body() dto: PurchaseProductDto,
+    @Req() request: Request,
+  ) {
+    const client = await this.authService.getAuthorizedClient(
+      request.headers.authorization,
+      request.headers.cookie,
+    );
 
-    return ResponseWrapper.from(this.serialize(product), false, 'Created');
-  }
+    if (!client) {
+      throw new UnauthorizedException(
+        ResponseWrapper.from({}, true, 'Unauthorized'),
+      );
+    }
 
-  @Patch(':id')
-  @ApiOkResponse({ description: 'Product updated' })
-  public async update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
-    const product = await this.productsService.update(id, dto);
+    const product = await this.productsService.findById(dto.productId);
 
     if (!product) {
       throw new NotFoundException(ResponseWrapper.from({}, true, 'Not found'));
     }
 
-    return ResponseWrapper.from(this.serialize(product));
-  }
+    const productData = this.productData(product);
 
-  @Delete(':id')
-  @ApiOkResponse({ description: 'Product deleted' })
-  public async deleteById(@Param('id') id: string) {
-    const deleted = await this.productsService.deleteById(id);
-
-    if (!deleted) {
-      throw new NotFoundException(ResponseWrapper.from({}, true, 'Not found'));
+    if (!productData.isAvailable) {
+      throw new BadRequestException(
+        ResponseWrapper.from({}, true, 'Product is not available'),
+      );
     }
 
-    return ResponseWrapper.from({ deleted });
+    const order = await this.ordersService.create({
+      clientId: client.id,
+      productId: productData._id.toString(),
+      product: {
+        id: productData._id.toString(),
+        categoryId: productData.categoryId,
+        name: productData.name,
+        description: productData.description,
+        price: productData.price,
+        imageUrl: productData.imageUrl ?? '',
+      },
+      quantity: dto.quantity,
+      totalPrice: productData.price * dto.quantity,
+      status: 'pending',
+    });
+
+    return ResponseWrapper.from(this.serializeOrder(order), false, 'Created');
   }
 
   private serialize(product: Product): ProductResponse {
-    const document = product as ProductDocument;
+    const data = this.productData(product);
+
+    return {
+      id: data._id.toString(),
+      categoryId: data.categoryId,
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      isAvailable: data.isAvailable,
+      imageUrl: data.imageUrl ?? '',
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+    };
+  }
+
+  private serializeOrder(order: Order): OrderResponse {
+    const document = order as OrderDocument;
     const data = document.toObject?.() ?? document;
 
     return {
       id: data._id.toString(),
-      name: data.name,
-      categoryId: data.categoryId.toString(),
+      clientId: data.clientId,
+      productId: data.productId,
+      product: data.product,
+      quantity: data.quantity,
+      totalPrice: data.totalPrice,
+      status: data.status,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     };
+  }
+
+  private productData(
+    product: Product,
+  ): Product & { _id: { toString(): string } } {
+    const document = product as ProductDocument;
+
+    return document.toObject?.() ?? document;
   }
 }
