@@ -128,7 +128,7 @@ export class MongooseService implements OnModuleInit, OnModuleDestroy {
     options?: QueryOptions<T>,
   ): Promise<T | null> {
     return model
-      .findOneAndUpdate(filter, data, { new: true, ...options })
+      .findOneAndUpdate(filter, data, { returnDocument: 'after', ...options })
       .exec();
   }
 
