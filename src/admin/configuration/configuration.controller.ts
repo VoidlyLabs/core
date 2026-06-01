@@ -26,6 +26,11 @@ type ConfigurationResponse = {
   name: string;
   description: string;
   logoUrl: string;
+  accentColor: string;
+  backgroundColor: string;
+  secondaryColor: string;
+  phoneNumber: string;
+  email: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -108,6 +113,11 @@ export class ConfigurationController {
       name: configuration.name,
       description: configuration.description,
       logoUrl: configuration.logoUrl,
+      accentColor: configuration.accentColor,
+      backgroundColor: configuration.backgroundColor,
+      secondaryColor: configuration.secondaryColor,
+      phoneNumber: configuration.phoneNumber,
+      email: configuration.email,
       createdAt: configuration.createdAt,
       updatedAt: configuration.updatedAt,
     };

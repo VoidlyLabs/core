@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { extname } from 'path';
-import { Model, UpdateQuery } from 'mongoose';
+import { Model } from 'mongoose';
 import { MongooseService } from '../../services/mongoose';
 import { StorageService } from '../../services/storage';
 import { Configuration, ConfigurationSchema } from './configuration.schema';
@@ -9,6 +9,20 @@ type LogoFile = {
   originalname: string;
   buffer: Buffer;
 };
+
+type ConfigurationUpdate = Partial<
+  Pick<
+    Configuration,
+    | 'name'
+    | 'description'
+    | 'logoUrl'
+    | 'accentColor'
+    | 'backgroundColor'
+    | 'secondaryColor'
+    | 'phoneNumber'
+    | 'email'
+  >
+>;
 
 @Injectable()
 export class ConfigurationService {
@@ -35,7 +49,18 @@ export class ConfigurationService {
   }
 
   public async update(
-    data: Pick<UpdateQuery<Configuration>, 'name' | 'description'>,
+    data: Partial<
+      Pick<
+        Configuration,
+        | 'name'
+        | 'description'
+        | 'accentColor'
+        | 'backgroundColor'
+        | 'secondaryColor'
+        | 'phoneNumber'
+        | 'email'
+      >
+    >,
   ): Promise<Configuration> {
     return this.upsert(data);
   }
@@ -68,17 +93,26 @@ export class ConfigurationService {
     return this.upsert({ logoUrl: '' });
   }
 
-  private async upsert(
-    data: UpdateQuery<Configuration>,
-  ): Promise<Configuration> {
+  private async upsert(data: ConfigurationUpdate): Promise<Configuration> {
+    const setOnInsert = this.getInsertDefaults(data);
     const configuration = await this.mongooseService.updateOne(
       this.model,
       ConfigurationService.SINGLETON_FILTER,
-      { $set: data, $setOnInsert: this.defaultConfiguration },
+      { $set: data, $setOnInsert: setOnInsert },
       { upsert: true },
     );
 
-    return configuration ?? this.get();
+    return configuration ?? (await this.get());
+  }
+
+  private getInsertDefaults(data: ConfigurationUpdate): ConfigurationUpdate {
+    const defaults: ConfigurationUpdate = { ...this.defaultConfiguration };
+
+    for (const key of Object.keys(data) as Array<keyof ConfigurationUpdate>) {
+      delete defaults[key];
+    }
+
+    return defaults;
   }
 
   private logoUrlToKey(logoUrl: string): string | null {
@@ -106,12 +140,24 @@ export class ConfigurationService {
 
   private get defaultConfiguration(): Pick<
     Configuration,
-    'name' | 'description' | 'logoUrl'
+    | 'name'
+    | 'description'
+    | 'logoUrl'
+    | 'accentColor'
+    | 'backgroundColor'
+    | 'secondaryColor'
+    | 'phoneNumber'
+    | 'email'
   > {
     return {
       name: '',
       description: '',
       logoUrl: '',
+      accentColor: '',
+      backgroundColor: '',
+      secondaryColor: '',
+      phoneNumber: '',
+      email: '',
     };
   }
 
