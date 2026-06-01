@@ -8,7 +8,10 @@ import {
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
-import { AdminController } from '../../decorators/controller/controller.decorator';
+import {
+  AdminAuthPublic,
+  AdminController,
+} from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
 import { AuthService } from './auth.service';
 import { UserSignInDto } from './dto/user-sign-in.dto';
@@ -33,6 +36,7 @@ export class AuthController {
   }
 
   @Post('/sign-in')
+  @AdminAuthPublic()
   @ApiOkResponse()
   public async signInClient(
     @Body() dto: UserSignInDto,

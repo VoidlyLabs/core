@@ -2,6 +2,12 @@ import { ExecutionContext } from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
 import { JwtService } from '@nestjs/jwt';
 
+type TokenSide = 'client' | 'server';
+type AccessTokenPayload = {
+  id?: unknown;
+  side?: unknown;
+};
+
 export class JwtUtility {
   private static readonly clientAccessTokenCookie = 'client_access_token';
   private static readonly serverAccessTokenCookie = 'user_access_token';
@@ -23,13 +29,9 @@ export class JwtUtility {
       return null;
     }
 
-    const payload = await this.clientJwtService
-      .verifyAsync(token, {
-        secret: process.env.CLIENT_JWT_SECRET,
-      })
-      .catch(() => null);
+    const payload = await this.verifyAccessToken(token, 'client');
 
-    return typeof payload?.id === 'string' ? payload.id : null;
+    return this.idFromPayload(payload);
   }
 
   public static async userIdFromCtx(
@@ -42,24 +44,16 @@ export class JwtUtility {
       return null;
     }
 
-    const payload = await this.serverJwtService
-      .verifyAsync(token, {
-        secret: process.env.SERVER_JWT_SECRET,
-      })
-      .catch(() => null);
+    const payload = await this.verifyAccessToken(token, 'server');
 
-    return typeof payload?.id === 'string' ? payload.id : null;
+    return this.idFromPayload(payload);
   }
 
   static async clientIdFromHeader(authHeader: string): Promise<string | null> {
     const token = authHeader.split(' ')[1];
-    const payload = await this.clientJwtService
-      .verifyAsync(token, {
-        secret: process.env.CLIENT_JWT_SECRET,
-      })
-      .catch(() => null);
+    const payload = await this.verifyAccessToken(token, 'client');
 
-    return typeof payload?.id === 'string' ? payload.id : null;
+    return this.idFromPayload(payload);
   }
 
   static async clientIdFromCookieHeader(
@@ -75,24 +69,16 @@ export class JwtUtility {
       return null;
     }
 
-    const payload = await this.clientJwtService
-      .verifyAsync(token, {
-        secret: process.env.CLIENT_JWT_SECRET,
-      })
-      .catch(() => null);
+    const payload = await this.verifyAccessToken(token, 'client');
 
-    return typeof payload?.id === 'string' ? payload.id : null;
+    return this.idFromPayload(payload);
   }
 
   static async userIdFromHeader(authHeader: string): Promise<string | null> {
     const token = authHeader.split(' ')[1];
-    const payload = await this.serverJwtService
-      .verifyAsync(token, {
-        secret: process.env.SERVER_JWT_SECRET,
-      })
-      .catch(() => null);
+    const payload = await this.verifyAccessToken(token, 'server');
 
-    return typeof payload?.id === 'string' ? payload.id : null;
+    return this.idFromPayload(payload);
   }
 
   static async userIdFromCookieHeader(
@@ -108,24 +94,20 @@ export class JwtUtility {
       return null;
     }
 
-    const payload = await this.serverJwtService
-      .verifyAsync(token, {
-        secret: process.env.SERVER_JWT_SECRET,
-      })
-      .catch(() => null);
+    const payload = await this.verifyAccessToken(token, 'server');
 
-    return typeof payload?.id === 'string' ? payload.id : null;
+    return this.idFromPayload(payload);
   }
 
   public static generateAccessToken(
     id: string,
-    side: 'client' | 'server' = 'client',
+    side: TokenSide = 'client',
   ): string {
     const service =
       side === 'client' ? this.clientJwtService : this.serverJwtService;
 
     return service.sign(
-      { id },
+      { id, side },
       {
         secret:
           side === 'client'
@@ -134,6 +116,30 @@ export class JwtUtility {
         expiresIn: '3d',
       },
     );
+  }
+
+  private static async verifyAccessToken(
+    token: string,
+    side: TokenSide,
+  ): Promise<AccessTokenPayload | null> {
+    const service =
+      side === 'client' ? this.clientJwtService : this.serverJwtService;
+    const payload = await service
+      .verifyAsync<AccessTokenPayload>(token, {
+        secret:
+          side === 'client'
+            ? process.env.CLIENT_JWT_SECRET
+            : process.env.SERVER_JWT_SECRET,
+      })
+      .catch(() => null);
+
+    return payload?.side === side ? payload : null;
+  }
+
+  private static idFromPayload(
+    payload: AccessTokenPayload | null,
+  ): string | null {
+    return typeof payload?.id === 'string' ? payload.id : null;
   }
 
   private static tokenFromRequest(
