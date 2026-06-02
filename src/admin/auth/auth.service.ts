@@ -16,12 +16,14 @@ type UserSignInResult = {
   user: {
     id: string;
     username: string;
+    balance: number;
   };
 };
 
 type AuthorizedUserResult = {
   id: string;
   username: string;
+  balance: number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -49,6 +51,7 @@ export class AuthService {
       user: {
         id,
         username: data.username,
+        balance: data.balance ?? 0,
       },
     };
   }
@@ -77,6 +80,7 @@ export class AuthService {
     return {
       id: data._id.toString(),
       username: data.username,
+      balance: data.balance ?? 0,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     };

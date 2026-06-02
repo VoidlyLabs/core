@@ -36,7 +36,8 @@ export class ClientsService {
   }
 
   public async create(
-    data: Pick<Client, 'username' | 'password'>,
+    data: Pick<Client, 'username' | 'password'> &
+      Partial<Pick<Client, 'balance'>>,
   ): Promise<Client> {
     return this.mongooseService.create(this.model, {
       ...data,
@@ -55,6 +56,41 @@ export class ClientsService {
     }
 
     return this.mongooseService.updateOne(this.model, { _id: id }, update);
+  }
+
+  public async debitBalanceIfSufficient(
+    id: string,
+    amount: number,
+  ): Promise<Client | null> {
+    return this.mongooseService.updateOne(
+      this.model,
+      {
+        _id: id,
+        balance: { $gte: amount },
+      },
+      {
+        $inc: {
+          balance: -amount,
+        },
+      },
+    );
+  }
+
+  public async incrementBalance(
+    id: string,
+    amount: number,
+  ): Promise<Client | null> {
+    return this.mongooseService.updateOne(
+      this.model,
+      {
+        _id: id,
+      },
+      {
+        $inc: {
+          balance: amount,
+        },
+      },
+    );
   }
 
   public async deleteById(id: string): Promise<boolean> {

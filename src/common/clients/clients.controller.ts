@@ -18,6 +18,7 @@ import { UpdateClientDto } from './dto/update-client.dto';
 type ClientResponse = {
   id: string;
   username: string;
+  balance: number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -93,6 +94,7 @@ export class ClientsController {
     return {
       id: data._id.toString(),
       username: data.username,
+      balance: data.balance ?? 0,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     };

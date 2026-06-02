@@ -36,7 +36,7 @@ export class UsersService {
   }
 
   public async create(
-    data: Pick<User, 'username' | 'password'>,
+    data: Pick<User, 'username' | 'password'> & Partial<Pick<User, 'balance'>>,
   ): Promise<User> {
     return this.mongooseService.create(this.model, {
       ...data,

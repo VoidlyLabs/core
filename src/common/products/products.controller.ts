@@ -13,6 +13,7 @@ import { Request } from 'express';
 import { CommonController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
 import { AuthService } from '../auth/auth.service';
+import { ClientsService } from '../clients/clients.service';
 import { Order } from '../orders/order.schema';
 import { OrdersService } from '../orders/orders.service';
 import { PurchaseProductDto } from './dto/purchase-product.dto';
@@ -67,6 +68,7 @@ export class ProductsController {
     private readonly productsService: ProductsService,
     private readonly ordersService: OrdersService,
     private readonly authService: AuthService,
+    private readonly clientsService: ClientsService,
   ) {}
 
   @Get()
@@ -132,21 +134,48 @@ export class ProductsController {
       );
     }
 
-    const order = await this.ordersService.create({
-      clientId: client.id,
-      productId: productData._id.toString(),
-      product: {
-        id: productData._id.toString(),
-        categoryId: productData.categoryId,
-        name: productData.name,
-        description: productData.description,
-        price: productData.price,
-        imageUrl: productData.imageUrl ?? '',
-      },
-      quantity: dto.quantity,
-      totalPrice: productData.price * dto.quantity,
-      status: 'pending',
-    });
+    const totalPrice = productData.price * dto.quantity;
+
+    if (totalPrice > 0) {
+      const debitedClient = await this.clientsService.debitBalanceIfSufficient(
+        client.id,
+        totalPrice,
+      );
+
+      if (!debitedClient) {
+        throw new BadRequestException(
+          ResponseWrapper.from({}, true, 'Insufficient balance'),
+        );
+      }
+    }
+
+    let order: Order;
+
+    try {
+      order = await this.ordersService.create({
+        clientId: client.id,
+        productId: productData._id.toString(),
+        product: {
+          id: productData._id.toString(),
+          categoryId: productData.categoryId,
+          name: productData.name,
+          description: productData.description,
+          price: productData.price,
+          imageUrl: productData.imageUrl ?? '',
+        },
+        quantity: dto.quantity,
+        totalPrice,
+        status: 'pending',
+      });
+    } catch (error) {
+      if (totalPrice > 0) {
+        await this.clientsService
+          .incrementBalance(client.id, totalPrice)
+          .catch(() => undefined);
+      }
+
+      throw error;
+    }
 
     return ResponseWrapper.from(this.serializeOrder(order), false, 'Created');
   }

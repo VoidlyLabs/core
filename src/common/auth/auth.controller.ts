@@ -6,13 +6,14 @@ import {
   Res,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { CommonController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
 import { AuthService } from './auth.service';
 import { ClientSignInDto } from './dto/client-sign-in.dto';
 import { ConfigUtility } from '../../utility/config/config.utility';
+import { ClientSignUpDto } from './dto/client-sign-up.dto';
 
 @ApiTags('Clients Authorization')
 @CommonController('auth')
@@ -28,6 +29,31 @@ export class AuthController {
       60 *
       60 *
       1000;
+  }
+
+  @Post('/sign-up')
+  @ApiCreatedResponse()
+  public async signUpClient(
+    @Body() dto: ClientSignUpDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.authService.signUpClient(dto);
+
+    response.cookie(process.env.CLIENT_TOKEN_COOKIE, result.token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: this.USER_TOKEN_MAX_AGE_MS,
+      path: '/',
+    });
+
+    return ResponseWrapper.from(
+      {
+        client: result.client,
+      },
+      false,
+      'Signed up',
+    );
   }
 
   @Post('/sign-in')
