@@ -63,15 +63,11 @@ export class JwtUtility {
       return null;
     }
 
-    const token = this.cookieValue(cookieHeader, this.clientAccessTokenCookie);
-
-    if (!token) {
-      return null;
-    }
-
-    const payload = await this.verifyAccessToken(token, 'client');
-
-    return this.idFromPayload(payload);
+    return this.idFromCookieHeader(
+      cookieHeader,
+      this.clientAccessTokenCookie,
+      'client',
+    );
   }
 
   static async userIdFromHeader(authHeader: string): Promise<string | null> {
@@ -88,15 +84,11 @@ export class JwtUtility {
       return null;
     }
 
-    const token = this.cookieValue(cookieHeader, this.serverAccessTokenCookie);
-
-    if (!token) {
-      return null;
-    }
-
-    const payload = await this.verifyAccessToken(token, 'server');
-
-    return this.idFromPayload(payload);
+    return this.idFromCookieHeader(
+      cookieHeader,
+      this.serverAccessTokenCookie,
+      'server',
+    );
   }
 
   public static generateAccessToken(
@@ -142,6 +134,25 @@ export class JwtUtility {
     return typeof payload?.id === 'string' ? payload.id : null;
   }
 
+  private static async idFromCookieHeader(
+    cookieHeader: string,
+    cookieName: string,
+    side: TokenSide,
+  ): Promise<string | null> {
+    const tokens = this.cookieValues(cookieHeader, cookieName);
+
+    for (const token of tokens) {
+      const payload = await this.verifyAccessToken(token, side);
+      const id = this.idFromPayload(payload);
+
+      if (id) {
+        return id;
+      }
+    }
+
+    return null;
+  }
+
   private static tokenFromRequest(
     request: FastifyRequest,
     cookieName: string,
@@ -158,23 +169,24 @@ export class JwtUtility {
       return null;
     }
 
-    return this.cookieValue(cookieHeader, cookieName);
+    return this.cookieValues(cookieHeader, cookieName)[0] ?? null;
   }
 
-  private static cookieValue(
+  private static cookieValues(
     cookieHeader: string,
     cookieName: string,
-  ): string | null {
+  ): string[] {
     const cookies = cookieHeader.split(';');
+    const values: string[] = [];
 
     for (const cookie of cookies) {
       const [name, ...valueParts] = cookie.trim().split('=');
 
       if (name === cookieName) {
-        return decodeURIComponent(valueParts.join('='));
+        values.push(decodeURIComponent(valueParts.join('=')));
       }
     }
 
-    return null;
+    return values;
   }
 }
