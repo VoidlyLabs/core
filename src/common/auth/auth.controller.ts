@@ -41,7 +41,7 @@ export class AuthController {
 
     response.cookie(process.env.CLIENT_TOKEN_COOKIE, result.token, {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       secure: process.env.NODE_ENV === 'production',
       maxAge: this.USER_TOKEN_MAX_AGE_MS,
       path: '/',
@@ -66,7 +66,7 @@ export class AuthController {
 
     response.cookie(process.env.CLIENT_TOKEN_COOKIE, result.token, {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       secure: process.env.NODE_ENV === 'production',
       maxAge: this.USER_TOKEN_MAX_AGE_MS,
       path: '/',
@@ -103,7 +103,7 @@ export class AuthController {
   public signOutClient(@Res({ passthrough: true }) response: Response) {
     response.clearCookie(process.env.CLIENT_TOKEN_COOKIE, {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',
     });

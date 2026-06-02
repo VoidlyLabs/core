@@ -44,10 +44,11 @@ export class AuthController {
   ) {
     const result = await this.authService.signInUser(dto);
 
+    const isProd = process.env.NODE_ENV === 'production';
     response.cookie(USER_TOKEN_COOKIE, result.token, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      sameSite: isProd ? 'none' : 'lax',
+      secure: isProd,
       maxAge: this.USER_TOKEN_MAX_AGE_MS,
       path: '/',
     });
@@ -81,10 +82,11 @@ export class AuthController {
   @Post('/sign-out')
   @ApiOkResponse()
   public signOutClient(@Res({ passthrough: true }) response: Response) {
+    const isProd = process.env.NODE_ENV === 'production';
     response.clearCookie(process.env.USER_TOKEN_COOKIE, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      sameSite: isProd ? 'none' : 'lax',
+      secure: isProd,
       path: '/',
     });
 
