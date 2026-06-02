@@ -43,6 +43,7 @@ export class AuthController {
       httpOnly: true,
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       secure: process.env.NODE_ENV === 'production',
+      domain: process.env.COOKIE_DOMAIN || undefined,
       maxAge: this.USER_TOKEN_MAX_AGE_MS,
       path: '/',
     });
@@ -68,6 +69,7 @@ export class AuthController {
       httpOnly: true,
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       secure: process.env.NODE_ENV === 'production',
+      domain: process.env.COOKIE_DOMAIN || undefined,
       maxAge: this.USER_TOKEN_MAX_AGE_MS,
       path: '/',
     });
@@ -105,6 +107,7 @@ export class AuthController {
       httpOnly: true,
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       secure: process.env.NODE_ENV === 'production',
+      domain: process.env.COOKIE_DOMAIN || undefined,
       path: '/',
     });
 

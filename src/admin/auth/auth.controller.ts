@@ -50,6 +50,7 @@ export class AuthController {
       sameSite: isProd ? 'none' : 'lax',
       secure: isProd,
       maxAge: this.USER_TOKEN_MAX_AGE_MS,
+      domain: process.env.COOKIE_DOMAIN || undefined,
       path: '/',
     });
 
@@ -87,6 +88,7 @@ export class AuthController {
       httpOnly: true,
       sameSite: isProd ? 'none' : 'lax',
       secure: isProd,
+      domain: process.env.COOKIE_DOMAIN || undefined,
       path: '/',
     });
 
