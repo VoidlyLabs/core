@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
-import { MongooseService } from '../../services/mongoose';
+import { MongoDocument, MongooseService } from '../../services/mongoose';
 import { Order, OrderSchema } from './order.schema';
 
 type CreateOrderData = Pick<
@@ -15,7 +15,7 @@ export class OrdersService {
 
   constructor(private readonly mongooseService: MongooseService) {}
 
-  public async create(data: CreateOrderData): Promise<Order> {
+  public async create(data: CreateOrderData): Promise<MongoDocument<Order>> {
     return this.mongooseService.create(this.model, data);
   }
 

@@ -6,15 +6,11 @@ import {
 import { compare } from 'bcryptjs';
 import { ResponseWrapper } from '../../libs/response';
 import { JwtUtility } from '../../libs/jwt/jwt.utility';
+import { MongoDocument } from '../../services/mongoose';
 import { ClientsService } from '../clients/clients.service';
 import { Client } from '../clients/client.schema';
 import { ClientSignInDto } from './dto/client-sign-in.dto';
 import { ClientSignUpDto } from './dto/client-sign-up.dto';
-
-type ClientDocument = Client & {
-  _id: { toString(): string };
-  toObject?: () => Client & { _id: { toString(): string } };
-};
 
 type ClientSignInResult = {
   token: string;
@@ -93,30 +89,25 @@ export class AuthService {
       return null;
     }
 
-    const document = client as ClientDocument;
-    const data = document.toObject?.() ?? document;
-
     return {
-      id: data._id.toString(),
-      username: data.username,
-      balance: data.balance ?? 0,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+      id: client._id.toString(),
+      username: client.username,
+      balance: client.balance ?? 0,
+      createdAt: client.createdAt,
+      updatedAt: client.updatedAt,
     };
   }
 
-  private authorizeClient(client: Client): ClientSignInResult {
-    const document = client as ClientDocument;
-    const data = document.toObject?.() ?? document;
-    const id = data._id.toString();
+  private authorizeClient(client: MongoDocument<Client>): ClientSignInResult {
+    const id = client._id.toString();
     const token = JwtUtility.generateAccessToken(id, 'client');
 
     return {
       token,
       client: {
         id,
-        username: data.username,
-        balance: data.balance ?? 0,
+        username: client.username,
+        balance: client.balance ?? 0,
       },
     };
   }

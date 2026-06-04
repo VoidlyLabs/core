@@ -9,6 +9,7 @@ import {
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { AdminController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
+import { MongoDocument } from '../../services/mongoose';
 import { Category } from './category.schema';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -19,11 +20,6 @@ type CategoryResponse = {
   name: string;
   createdAt: Date;
   updatedAt: Date;
-};
-
-type CategoryDocument = Category & {
-  _id: { toString(): string };
-  toObject?: () => Category & { _id: { toString(): string } };
 };
 
 @ApiTags('Category')
@@ -63,15 +59,12 @@ export class CategoryController {
     return ResponseWrapper.from({ deleted });
   }
 
-  private serialize(category: Category): CategoryResponse {
-    const document = category as CategoryDocument;
-    const data = document.toObject?.() ?? document;
-
+  private serialize(category: MongoDocument<Category>): CategoryResponse {
     return {
-      id: data._id.toString(),
-      name: data.name,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+      id: category._id.toString(),
+      name: category.name,
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
     };
   }
 }

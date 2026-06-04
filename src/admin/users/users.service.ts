@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { hash } from 'bcryptjs';
 import { Model, QueryFilter, UpdateQuery } from 'mongoose';
-import { MongooseService } from '../../services/mongoose';
+import { MongoDocument, MongooseService } from '../../services/mongoose';
 import { User, UserSchema } from './user.schema';
 import { ConfigUtility } from '../../utility/config/config.utility';
 
@@ -19,25 +19,31 @@ export class UsersService {
     );
   }
 
-  public async find(filter: QueryFilter<User> = {}): Promise<User[]> {
+  public async find(
+    filter: QueryFilter<User> = {},
+  ): Promise<Array<MongoDocument<User>>> {
     return this.mongooseService.find(this.model, filter);
   }
 
-  public async findOne(filter: QueryFilter<User>): Promise<User | null> {
+  public async findOne(
+    filter: QueryFilter<User>,
+  ): Promise<MongoDocument<User> | null> {
     return this.mongooseService.findOne(this.model, filter);
   }
 
-  public async findById(id: string): Promise<User | null> {
+  public async findById(id: string): Promise<MongoDocument<User> | null> {
     return this.mongooseService.findById(this.model, id);
   }
 
-  public async findByUsername(username: string): Promise<User | null> {
+  public async findByUsername(
+    username: string,
+  ): Promise<MongoDocument<User> | null> {
     return this.findOne({ username });
   }
 
   public async create(
     data: Pick<User, 'username' | 'password'> & Partial<Pick<User, 'balance'>>,
-  ): Promise<User> {
+  ): Promise<MongoDocument<User>> {
     return this.mongooseService.create(this.model, {
       ...data,
       password: await hash(data.password, this.PASSWORD_SALT_ROUNDS),
@@ -47,7 +53,7 @@ export class UsersService {
   public async update(
     id: string,
     data: UpdateQuery<User>,
-  ): Promise<User | null> {
+  ): Promise<MongoDocument<User> | null> {
     const update = { ...data };
 
     if (typeof update.password === 'string') {

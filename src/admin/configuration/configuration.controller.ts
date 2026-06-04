@@ -18,11 +18,13 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
+import { MongoDocument } from '../../services/mongoose';
 import { Configuration } from './configuration.schema';
 import { ConfigurationService } from './configuration.service';
 import { UpdateConfigurationDto } from './dto/update-configuration.dto';
 
 type ConfigurationResponse = {
+  id: string;
   name: string;
   description: string;
   logoUrl: string;
@@ -108,8 +110,11 @@ export class ConfigurationController {
     return ResponseWrapper.from(this.serialize(configuration));
   }
 
-  private serialize(configuration: Configuration): ConfigurationResponse {
+  private serialize(
+    configuration: MongoDocument<Configuration>,
+  ): ConfigurationResponse {
     return {
+      id: configuration._id.toString(),
       name: configuration.name,
       description: configuration.description,
       logoUrl: configuration.logoUrl,

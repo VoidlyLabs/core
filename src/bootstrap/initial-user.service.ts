@@ -22,7 +22,9 @@ export class InitialUserService implements OnApplicationBootstrap {
   ) {}
 
   public async onApplicationBootstrap(): Promise<void> {
-    const marker = await this.model.findOne({ name: INITIAL_USER_MARKER }).exec();
+    const marker = await this.model
+      .findOne({ name: INITIAL_USER_MARKER })
+      .exec();
 
     if (marker) {
       return;
