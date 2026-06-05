@@ -10,6 +10,7 @@ import {
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CommonController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
+import { MongoDocument } from '../../services/mongoose';
 import { Client } from './client.schema';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
@@ -21,11 +22,6 @@ type ClientResponse = {
   balance: number;
   createdAt: Date;
   updatedAt: Date;
-};
-
-type ClientDocument = Client & {
-  _id: { toString(): string };
-  toObject?: () => Client & { _id: { toString(): string } };
 };
 
 @ApiTags('Clients')
@@ -87,16 +83,13 @@ export class ClientsController {
     return ResponseWrapper.from({ deleted });
   }
 
-  private serialize(client: Client): ClientResponse {
-    const document = client as ClientDocument;
-    const data = document.toObject?.() ?? document;
-
+  private serialize(client: MongoDocument<Client>): ClientResponse {
     return {
-      id: data._id.toString(),
-      username: data.username,
-      balance: data.balance ?? 0,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+      id: client._id.toString(),
+      username: client.username,
+      balance: client.balance ?? 0,
+      createdAt: client.createdAt,
+      updatedAt: client.updatedAt,
     };
   }
 }

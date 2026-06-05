@@ -4,8 +4,10 @@ import { Configuration } from '../../admin/configuration/configuration.schema';
 import { ConfigurationService } from '../../admin/configuration/configuration.service';
 import { CommonController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
+import { MongoDocument } from '../../services/mongoose';
 
 type ConfigurationResponse = {
+  id: string;
   name: string;
   description: string;
   logoUrl: string;
@@ -31,8 +33,11 @@ export class ConfigurationController {
     return ResponseWrapper.from(this.serialize(configuration));
   }
 
-  private serialize(configuration: Configuration): ConfigurationResponse {
+  private serialize(
+    configuration: MongoDocument<Configuration>,
+  ): ConfigurationResponse {
     return {
+      id: configuration._id.toString(),
       name: configuration.name,
       description: configuration.description,
       logoUrl: configuration.logoUrl,

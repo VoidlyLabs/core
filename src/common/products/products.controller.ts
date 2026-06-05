@@ -12,6 +12,7 @@ import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { CommonController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
+import { MongoDocument } from '../../services/mongoose';
 import { AuthService } from '../auth/auth.service';
 import { ClientsService } from '../clients/clients.service';
 import { Order } from '../orders/order.schema';
@@ -32,11 +33,6 @@ type ProductResponse = {
   updatedAt: Date;
 };
 
-type ProductDocument = Product & {
-  _id: { toString(): string };
-  toObject?: () => Product & { _id: { toString(): string } };
-};
-
 type OrderResponse = {
   id: string;
   clientId: string;
@@ -54,11 +50,6 @@ type OrderResponse = {
   status: string;
   createdAt: Date;
   updatedAt: Date;
-};
-
-type OrderDocument = Order & {
-  _id: { toString(): string };
-  toObject?: () => Order & { _id: { toString(): string } };
 };
 
 @ApiTags('Products')
@@ -149,7 +140,7 @@ export class ProductsController {
       }
     }
 
-    let order: Order;
+    let order: MongoDocument<Order>;
 
     try {
       order = await this.ordersService.create({
@@ -180,44 +171,35 @@ export class ProductsController {
     return ResponseWrapper.from(this.serializeOrder(order), false, 'Created');
   }
 
-  private serialize(product: Product): ProductResponse {
-    const data = this.productData(product);
-
+  private serialize(product: MongoDocument<Product>): ProductResponse {
     return {
-      id: data._id.toString(),
-      categoryId: data.categoryId,
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      isAvailable: data.isAvailable,
-      imageUrl: data.imageUrl ?? '',
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+      id: product._id.toString(),
+      categoryId: product.categoryId,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      isAvailable: product.isAvailable,
+      imageUrl: product.imageUrl ?? '',
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
     };
   }
 
-  private serializeOrder(order: Order): OrderResponse {
-    const document = order as OrderDocument;
-    const data = document.toObject?.() ?? document;
-
+  private serializeOrder(order: MongoDocument<Order>): OrderResponse {
     return {
-      id: data._id.toString(),
-      clientId: data.clientId,
-      productId: data.productId,
-      product: data.product,
-      quantity: data.quantity,
-      totalPrice: data.totalPrice,
-      status: data.status,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+      id: order._id.toString(),
+      clientId: order.clientId,
+      productId: order.productId,
+      product: order.product,
+      quantity: order.quantity,
+      totalPrice: order.totalPrice,
+      status: order.status,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
     };
   }
 
-  private productData(
-    product: Product,
-  ): Product & { _id: { toString(): string } } {
-    const document = product as ProductDocument;
-
-    return document.toObject?.() ?? document;
+  private productData(product: MongoDocument<Product>): MongoDocument<Product> {
+    return product;
   }
 }

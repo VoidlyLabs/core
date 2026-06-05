@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { extname } from 'path';
 import { Model } from 'mongoose';
-import { MongooseService } from '../../services/mongoose';
+import { MongoDocument, MongooseService } from '../../services/mongoose';
 import { StorageService } from '../../services/storage';
 import { Configuration, ConfigurationSchema } from './configuration.schema';
 
@@ -35,7 +35,7 @@ export class ConfigurationService {
     private readonly storageService: StorageService,
   ) {}
 
-  public async get(): Promise<Configuration> {
+  public async get(): Promise<MongoDocument<Configuration>> {
     const configuration = await this.mongooseService.findOne(
       this.model,
       ConfigurationService.SINGLETON_FILTER,
@@ -61,11 +61,13 @@ export class ConfigurationService {
         | 'email'
       >
     >,
-  ): Promise<Configuration> {
+  ): Promise<MongoDocument<Configuration>> {
     return this.upsert(data);
   }
 
-  public async updateLogo(file: LogoFile): Promise<Configuration> {
+  public async updateLogo(
+    file: LogoFile,
+  ): Promise<MongoDocument<Configuration>> {
     const configuration = await this.get();
     const oldLogoKey = this.logoUrlToKey(configuration.logoUrl);
     const extension = extname(file.originalname).toLowerCase();
@@ -82,7 +84,7 @@ export class ConfigurationService {
     return this.upsert({ logoUrl: storedLogo.url });
   }
 
-  public async deleteLogo(): Promise<Configuration> {
+  public async deleteLogo(): Promise<MongoDocument<Configuration>> {
     const configuration = await this.get();
     const logoKey = this.logoUrlToKey(configuration.logoUrl);
 
@@ -93,7 +95,9 @@ export class ConfigurationService {
     return this.upsert({ logoUrl: '' });
   }
 
-  private async upsert(data: ConfigurationUpdate): Promise<Configuration> {
+  private async upsert(
+    data: ConfigurationUpdate,
+  ): Promise<MongoDocument<Configuration>> {
     const setOnInsert = this.getInsertDefaults(data);
     const configuration = await this.mongooseService.updateOne(
       this.model,

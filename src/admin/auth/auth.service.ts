@@ -2,14 +2,8 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { compare } from 'bcryptjs';
 import { ResponseWrapper } from '../../libs/response';
 import { JwtUtility } from '../../libs/jwt/jwt.utility';
-import { User } from '../users/user.schema';
 import { UsersService } from '../users/users.service';
 import { UserSignInDto } from './dto/user-sign-in.dto';
-
-type UserDocument = User & {
-  _id: { toString(): string };
-  toObject?: () => User & { _id: { toString(): string } };
-};
 
 type UserSignInResult = {
   token: string;
@@ -41,17 +35,15 @@ export class AuthService {
       );
     }
 
-    const document = client as UserDocument;
-    const data = document.toObject?.() ?? document;
-    const id = data._id.toString();
+    const id = client._id.toString();
     const token = JwtUtility.generateAccessToken(id, 'server');
 
     return {
       token,
       user: {
         id,
-        username: data.username,
-        balance: data.balance ?? 0,
+        username: client.username,
+        balance: client.balance ?? 0,
       },
     };
   }
@@ -74,15 +66,12 @@ export class AuthService {
       return null;
     }
 
-    const document = user as UserDocument;
-    const data = document.toObject?.() ?? document;
-
     return {
-      id: data._id.toString(),
-      username: data.username,
-      balance: data.balance ?? 0,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+      id: user._id.toString(),
+      username: user.username,
+      balance: user.balance ?? 0,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
   }
 }

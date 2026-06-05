@@ -9,17 +9,23 @@ import {
   Connection,
   ConnectionStates,
   Model,
+  HydratedDocument,
   Mongoose,
   ProjectionType,
   QueryFilter,
   QueryOptions,
   Schema,
+  Types,
   UpdateQuery,
 } from 'mongoose';
 import { ConfigUtility } from '../../utility/config/config.utility';
 
 type ModelOptions = {
   collection?: string;
+};
+
+export type MongoDocument<T> = HydratedDocument<T> & {
+  _id: Types.ObjectId;
 };
 
 @Injectable()
@@ -95,8 +101,10 @@ export class MongooseService implements OnModuleInit, OnModuleDestroy {
     filter: QueryFilter<T> = {},
     projection?: ProjectionType<T>,
     options?: QueryOptions<T>,
-  ): Promise<T[]> {
-    return model.find(filter, projection, options).exec();
+  ): Promise<Array<MongoDocument<T>>> {
+    return (await model.find(filter, projection, options).exec()) as Array<
+      MongoDocument<T>
+    >;
   }
 
   public async findOne<T>(
@@ -104,8 +112,10 @@ export class MongooseService implements OnModuleInit, OnModuleDestroy {
     filter: QueryFilter<T>,
     projection?: ProjectionType<T>,
     options?: QueryOptions<T>,
-  ): Promise<T | null> {
-    return model.findOne(filter, projection, options).exec();
+  ): Promise<MongoDocument<T> | null> {
+    return (await model
+      .findOne(filter, projection, options)
+      .exec()) as MongoDocument<T> | null;
   }
 
   public async findById<T>(
@@ -113,12 +123,17 @@ export class MongooseService implements OnModuleInit, OnModuleDestroy {
     id: string,
     projection?: ProjectionType<T>,
     options?: QueryOptions<T>,
-  ): Promise<T | null> {
-    return model.findById(id, projection, options).exec();
+  ): Promise<MongoDocument<T> | null> {
+    return (await model
+      .findById(id, projection, options)
+      .exec()) as MongoDocument<T> | null;
   }
 
-  public async create<T>(model: Model<T>, data: Partial<T>): Promise<T> {
-    return model.create(data);
+  public async create<T>(
+    model: Model<T>,
+    data: Partial<T>,
+  ): Promise<MongoDocument<T>> {
+    return (await model.create(data)) as MongoDocument<T>;
   }
 
   public async updateOne<T>(
@@ -126,10 +141,10 @@ export class MongooseService implements OnModuleInit, OnModuleDestroy {
     filter: QueryFilter<T>,
     data: UpdateQuery<T>,
     options?: QueryOptions<T>,
-  ): Promise<T | null> {
-    return model
+  ): Promise<MongoDocument<T> | null> {
+    return (await model
       .findOneAndUpdate(filter, data, { returnDocument: 'after', ...options })
-      .exec();
+      .exec()) as MongoDocument<T> | null;
   }
 
   public async deleteOne<T>(

@@ -20,6 +20,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
+import { MongoDocument } from '../../services/mongoose';
 import { Product } from '../../common/products/product.schema';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -41,11 +42,6 @@ type UploadedProductImageFile = {
   originalname: string;
   mimetype: string;
   buffer: Buffer;
-};
-
-type ProductDocument = Product & {
-  _id: { toString(): string };
-  toObject?: () => Product & { _id: { toString(): string } };
 };
 
 @ApiTags('Products')
@@ -160,20 +156,17 @@ export class ProductsController {
     return ResponseWrapper.from({ deleted });
   }
 
-  private serialize(product: Product): ProductResponse {
-    const document = product as ProductDocument;
-    const data = document.toObject?.() ?? document;
-
+  private serialize(product: MongoDocument<Product>): ProductResponse {
     return {
-      id: data._id.toString(),
-      categoryId: data.categoryId,
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      isAvailable: data.isAvailable,
-      imageUrl: data.imageUrl ?? '',
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+      id: product._id.toString(),
+      categoryId: product.categoryId,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      isAvailable: product.isAvailable,
+      imageUrl: product.imageUrl ?? '',
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
     };
   }
 }

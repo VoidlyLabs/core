@@ -84,7 +84,7 @@ export class AuthController {
   @ApiOkResponse()
   public signOutClient(@Res({ passthrough: true }) response: Response) {
     const isProd = process.env.NODE_ENV === 'production';
-    response.clearCookie(process.env.USER_TOKEN_COOKIE, {
+    response.clearCookie(USER_TOKEN_COOKIE, {
       httpOnly: true,
       sameSite: isProd ? 'none' : 'lax',
       secure: isProd,

@@ -4,17 +4,13 @@ import { Category } from '../../admin/category/category.schema';
 import { CategoryService } from '../../admin/category/category.service';
 import { CommonController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
+import { MongoDocument } from '../../services/mongoose';
 
 type CategoryResponse = {
   id: string;
   name: string;
   createdAt: Date;
   updatedAt: Date;
-};
-
-type CategoryDocument = Category & {
-  _id: { toString(): string };
-  toObject?: () => Category & { _id: { toString(): string } };
 };
 
 @ApiTags('Category')
@@ -44,15 +40,12 @@ export class CategoryController {
     return ResponseWrapper.from(this.serialize(category));
   }
 
-  private serialize(category: Category): CategoryResponse {
-    const document = category as CategoryDocument;
-    const data = document.toObject?.() ?? document;
-
+  private serialize(category: MongoDocument<Category>): CategoryResponse {
     return {
-      id: data._id.toString(),
-      name: data.name,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+      id: category._id.toString(),
+      name: category.name,
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
     };
   }
 }

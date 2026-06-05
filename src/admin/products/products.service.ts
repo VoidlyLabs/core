@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { extname } from 'path';
 import { Model, UpdateQuery } from 'mongoose';
 import { Product, ProductSchema } from '../../common/products/product.schema';
-import { MongooseService } from '../../services/mongoose';
+import { MongoDocument, MongooseService } from '../../services/mongoose';
 import { StorageService } from '../../services/storage';
 
 type ProductImageFile = {
@@ -30,26 +30,30 @@ export class ProductsService {
     private readonly storageService: StorageService,
   ) {}
 
-  public async find(): Promise<Product[]> {
+  public async find(): Promise<Array<MongoDocument<Product>>> {
     return this.mongooseService.find(this.model);
   }
 
-  public async findById(id: string): Promise<Product | null> {
+  public async findById(id: string): Promise<MongoDocument<Product> | null> {
     return this.mongooseService.findById(this.model, id);
   }
 
-  public async findByCategoryId(categoryId: string): Promise<Product[]> {
+  public async findByCategoryId(
+    categoryId: string,
+  ): Promise<Array<MongoDocument<Product>>> {
     return this.mongooseService.find(this.model, { categoryId });
   }
 
-  public async create(data: CreateProductData): Promise<Product> {
+  public async create(
+    data: CreateProductData,
+  ): Promise<MongoDocument<Product>> {
     return this.mongooseService.create(this.model, data);
   }
 
   public async update(
     id: string,
     data: UpdateProductData,
-  ): Promise<Product | null> {
+  ): Promise<MongoDocument<Product> | null> {
     const update: UpdateQuery<Product> = {};
 
     if (typeof data.name === 'string') {
@@ -78,7 +82,7 @@ export class ProductsService {
   public async updateImage(
     id: string,
     file: ProductImageFile,
-  ): Promise<Product | null> {
+  ): Promise<MongoDocument<Product> | null> {
     const product = await this.findById(id);
 
     if (!product) {
@@ -106,7 +110,7 @@ export class ProductsService {
     );
   }
 
-  public async deleteImage(id: string): Promise<Product | null> {
+  public async deleteImage(id: string): Promise<MongoDocument<Product> | null> {
     const product = await this.findById(id);
 
     if (!product) {

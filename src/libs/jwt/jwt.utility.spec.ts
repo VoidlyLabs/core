@@ -27,4 +27,22 @@ describe('JwtUtility', () => {
       JwtUtility.clientIdFromHeader(`Bearer ${token}`),
     ).resolves.toBe(null);
   });
+
+  it('reads a valid user token when duplicate user cookies include stale values', async () => {
+    const token = JwtUtility.generateAccessToken('user-id', 'server');
+    const cookieHeader = `user_access_token=stale-token; user_access_token=${encodeURIComponent(token)}`;
+
+    await expect(JwtUtility.userIdFromCookieHeader(cookieHeader)).resolves.toBe(
+      'user-id',
+    );
+  });
+
+  it('reads a valid client token when duplicate client cookies include stale values', async () => {
+    const token = JwtUtility.generateAccessToken('client-id', 'client');
+    const cookieHeader = `client_access_token=stale-token; client_access_token=${encodeURIComponent(token)}`;
+
+    await expect(
+      JwtUtility.clientIdFromCookieHeader(cookieHeader),
+    ).resolves.toBe('client-id');
+  });
 });

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { hash } from 'bcryptjs';
 import { Model, QueryFilter, UpdateQuery } from 'mongoose';
-import { MongooseService } from '../../services/mongoose';
+import { MongoDocument, MongooseService } from '../../services/mongoose';
 import { Client, ClientSchema } from './client.schema';
 import { ConfigUtility } from '../../utility/config/config.utility';
 
@@ -19,26 +19,32 @@ export class ClientsService {
     );
   }
 
-  public async find(filter: QueryFilter<Client> = {}): Promise<Client[]> {
+  public async find(
+    filter: QueryFilter<Client> = {},
+  ): Promise<Array<MongoDocument<Client>>> {
     return this.mongooseService.find(this.model, filter);
   }
 
-  public async findOne(filter: QueryFilter<Client>): Promise<Client | null> {
+  public async findOne(
+    filter: QueryFilter<Client>,
+  ): Promise<MongoDocument<Client> | null> {
     return this.mongooseService.findOne(this.model, filter);
   }
 
-  public async findById(id: string): Promise<Client | null> {
+  public async findById(id: string): Promise<MongoDocument<Client> | null> {
     return this.mongooseService.findById(this.model, id);
   }
 
-  public async findByUsername(username: string): Promise<Client | null> {
+  public async findByUsername(
+    username: string,
+  ): Promise<MongoDocument<Client> | null> {
     return this.findOne({ username });
   }
 
   public async create(
     data: Pick<Client, 'username' | 'password'> &
       Partial<Pick<Client, 'balance'>>,
-  ): Promise<Client> {
+  ): Promise<MongoDocument<Client>> {
     return this.mongooseService.create(this.model, {
       ...data,
       password: await hash(data.password, this.PASSWORD_SALT_ROUNDS),
@@ -48,7 +54,7 @@ export class ClientsService {
   public async update(
     id: string,
     data: UpdateQuery<Client>,
-  ): Promise<Client | null> {
+  ): Promise<MongoDocument<Client> | null> {
     const update = { ...data };
 
     if (typeof update.password === 'string') {
@@ -61,7 +67,7 @@ export class ClientsService {
   public async debitBalanceIfSufficient(
     id: string,
     amount: number,
-  ): Promise<Client | null> {
+  ): Promise<MongoDocument<Client> | null> {
     return this.mongooseService.updateOne(
       this.model,
       {
@@ -79,7 +85,7 @@ export class ClientsService {
   public async incrementBalance(
     id: string,
     amount: number,
-  ): Promise<Client | null> {
+  ): Promise<MongoDocument<Client> | null> {
     return this.mongooseService.updateOne(
       this.model,
       {
