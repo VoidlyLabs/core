@@ -6,5 +6,5 @@
   "trailingComma": "all",
   "arrowParens": "always",
   "semi": true,
-  "quoteProps": "consistent"
+  "quoteProps": "consistent",
 }
