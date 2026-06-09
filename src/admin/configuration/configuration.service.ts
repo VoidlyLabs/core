@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { extname } from 'path';
-import { Model } from 'mongoose';
+import { Model, UpdateQuery } from 'mongoose';
+import {
+  LocalizedString,
+  PartialLocalizedStringDto,
+} from '../../libs/localization';
 import { MongoDocument, MongooseService } from '../../services/mongoose';
 import { StorageService } from '../../services/storage';
 import { Configuration, ConfigurationSchema } from './configuration.schema';
@@ -13,8 +17,6 @@ type LogoFile = {
 type ConfigurationUpdate = Partial<
   Pick<
     Configuration,
-    | 'name'
-    | 'description'
     | 'logoUrl'
     | 'accentColor'
     | 'backgroundColor'
@@ -22,7 +24,20 @@ type ConfigurationUpdate = Partial<
     | 'phoneNumber'
     | 'email'
   >
->;
+> & {
+  name?: PartialLocalizedStringDto;
+  description?: PartialLocalizedStringDto;
+};
+
+type ConfigurationScalarField =
+  | 'logoUrl'
+  | 'accentColor'
+  | 'backgroundColor'
+  | 'secondaryColor'
+  | 'phoneNumber'
+  | 'email';
+
+type ConfigurationLocalizedField = 'name' | 'description';
 
 @Injectable()
 export class ConfigurationService {
@@ -49,18 +64,7 @@ export class ConfigurationService {
   }
 
   public async update(
-    data: Partial<
-      Pick<
-        Configuration,
-        | 'name'
-        | 'description'
-        | 'accentColor'
-        | 'backgroundColor'
-        | 'secondaryColor'
-        | 'phoneNumber'
-        | 'email'
-      >
-    >,
+    data: Omit<ConfigurationUpdate, 'logoUrl'>,
   ): Promise<MongoDocument<Configuration>> {
     return this.upsert(data);
   }
@@ -98,22 +102,66 @@ export class ConfigurationService {
   private async upsert(
     data: ConfigurationUpdate,
   ): Promise<MongoDocument<Configuration>> {
-    const setOnInsert = this.getInsertDefaults(data);
+    const update = this.buildUpdate(data);
+    const setOnInsert = this.getInsertDefaults(update);
     const configuration = await this.mongooseService.updateOne(
       this.model,
       ConfigurationService.SINGLETON_FILTER,
-      { $set: data, $setOnInsert: setOnInsert },
+      { $set: update, $setOnInsert: setOnInsert },
       { upsert: true },
     );
 
     return configuration ?? (await this.get());
   }
 
-  private getInsertDefaults(data: ConfigurationUpdate): ConfigurationUpdate {
-    const defaults: ConfigurationUpdate = { ...this.defaultConfiguration };
+  private buildUpdate(data: ConfigurationUpdate): UpdateQuery<Configuration> {
+    const update: UpdateQuery<Configuration> = {};
+    const scalarFields: ConfigurationScalarField[] = [
+      'logoUrl',
+      'accentColor',
+      'backgroundColor',
+      'secondaryColor',
+      'phoneNumber',
+      'email',
+    ];
 
-    for (const key of Object.keys(data) as Array<keyof ConfigurationUpdate>) {
-      delete defaults[key];
+    this.applyLocalizedUpdate(update, 'name', data.name);
+    this.applyLocalizedUpdate(update, 'description', data.description);
+
+    for (const field of scalarFields) {
+      if (typeof data[field] === 'string') {
+        update[field] = data[field];
+      }
+    }
+
+    return update;
+  }
+
+  private applyLocalizedUpdate(
+    update: UpdateQuery<Configuration>,
+    field: ConfigurationLocalizedField,
+    value?: PartialLocalizedStringDto,
+  ): void {
+    if (!value) {
+      return;
+    }
+
+    if (typeof value.uk === 'string') {
+      update[`${field}.uk`] = value.uk;
+    }
+
+    if (typeof value.en === 'string') {
+      update[`${field}.en`] = value.en;
+    }
+  }
+
+  private getInsertDefaults(
+    update: UpdateQuery<Configuration>,
+  ): Partial<Configuration> {
+    const defaults: Partial<Configuration> = { ...this.defaultConfiguration };
+
+    for (const key of Object.keys(update)) {
+      delete defaults[key.split('.')[0] as keyof Configuration];
     }
 
     return defaults;
@@ -154,14 +202,21 @@ export class ConfigurationService {
     | 'email'
   > {
     return {
-      name: '',
-      description: '',
+      name: this.emptyLocalizedString,
+      description: this.emptyLocalizedString,
       logoUrl: '',
       accentColor: '',
       backgroundColor: '',
       secondaryColor: '',
       phoneNumber: '',
       email: '',
+    };
+  }
+
+  private get emptyLocalizedString(): LocalizedString {
+    return {
+      uk: '',
+      en: '',
     };
   }
 

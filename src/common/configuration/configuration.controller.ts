@@ -1,8 +1,9 @@
-import { Get } from '@nestjs/common';
+import { Get, Headers, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Configuration } from '../../admin/configuration/configuration.schema';
 import { ConfigurationService } from '../../admin/configuration/configuration.service';
 import { CommonController } from '../../decorators/controller/controller.decorator';
+import { localize, resolveLanguage } from '../../libs/localization';
 import { ResponseWrapper } from '../../libs/response';
 import { MongoDocument } from '../../services/mongoose';
 
@@ -27,19 +28,28 @@ export class ConfigurationController {
 
   @Get()
   @ApiOkResponse({ description: 'Configuration details' })
-  public async find() {
+  public async find(
+    @Query('lang') lang?: string,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
     const configuration = await this.configurationService.get();
 
-    return ResponseWrapper.from(this.serialize(configuration));
+    return ResponseWrapper.from(
+      this.serialize(configuration, lang, acceptLanguage),
+    );
   }
 
   private serialize(
     configuration: MongoDocument<Configuration>,
+    lang?: string,
+    acceptLanguage?: string,
   ): ConfigurationResponse {
+    const language = resolveLanguage(lang, acceptLanguage);
+
     return {
       id: configuration._id.toString(),
-      name: configuration.name,
-      description: configuration.description,
+      name: localize(configuration.name, language),
+      description: localize(configuration.description, language),
       logoUrl: configuration.logoUrl,
       accentColor: configuration.accentColor,
       backgroundColor: configuration.backgroundColor,

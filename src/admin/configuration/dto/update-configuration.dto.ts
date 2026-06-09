@@ -1,22 +1,30 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsEmail,
   IsHexColor,
+  IsObject,
   IsOptional,
   IsString,
+  ValidateNested,
   ValidateIf,
 } from 'class-validator';
+import { PartialLocalizedStringDto } from '../../../libs/localization';
 
 export class UpdateConfigurationDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: PartialLocalizedStringDto })
   @IsOptional()
-  @IsString()
-  name?: string;
+  @IsObject()
+  @ValidateNested()
+  @Type(() => PartialLocalizedStringDto)
+  name?: PartialLocalizedStringDto;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: PartialLocalizedStringDto })
   @IsOptional()
-  @IsString()
-  description?: string;
+  @IsObject()
+  @ValidateNested()
+  @Type(() => PartialLocalizedStringDto)
+  description?: PartialLocalizedStringDto;
 
   @ApiPropertyOptional({ example: '#ff6600' })
   @IsOptional()

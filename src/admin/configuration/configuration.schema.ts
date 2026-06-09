@@ -1,8 +1,9 @@
 import { Schema } from 'mongoose';
+import { LocalizedString } from '../../libs/localization';
 
 export type Configuration = {
-  name: string;
-  description: string;
+  name: LocalizedString;
+  description: LocalizedString;
   logoUrl: string;
   accentColor: string;
   backgroundColor: string;
@@ -16,14 +17,12 @@ export type Configuration = {
 export const ConfigurationSchema = new Schema<Configuration>(
   {
     name: {
-      type: String,
-      default: '',
-      trim: true,
+      uk: { type: String, default: '', trim: true },
+      en: { type: String, default: '', trim: true },
     },
     description: {
-      type: String,
-      default: '',
-      trim: true,
+      uk: { type: String, default: '', trim: true },
+      en: { type: String, default: '', trim: true },
     },
     logoUrl: {
       type: String,

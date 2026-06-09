@@ -17,6 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminController } from '../../decorators/controller/controller.decorator';
+import { LocalizedString } from '../../libs/localization';
 import { ResponseWrapper } from '../../libs/response';
 import { MongoDocument } from '../../services/mongoose';
 import { Configuration } from './configuration.schema';
@@ -25,8 +26,8 @@ import { UpdateConfigurationDto } from './dto/update-configuration.dto';
 
 type ConfigurationResponse = {
   id: string;
-  name: string;
-  description: string;
+  name: LocalizedString;
+  description: LocalizedString;
   logoUrl: string;
   accentColor: string;
   backgroundColor: string;
