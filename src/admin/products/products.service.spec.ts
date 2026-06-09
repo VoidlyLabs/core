@@ -39,14 +39,14 @@ describe('Admin ProductsService', () => {
 
   it('builds update query only from provided product fields', async () => {
     await service.update('product-id', {
-      name: 'Keyboard',
+      name: { en: 'Keyboard' },
       price: 99,
     });
 
     expect(mongooseService.updateOne).toHaveBeenCalledWith(
       model,
       { _id: 'product-id' },
-      { name: 'Keyboard', price: 99 },
+      { 'name.en': 'Keyboard', 'price': 99 },
     );
   });
 

@@ -2,10 +2,14 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
+  ValidateNested,
   Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { PartialLocalizedStringDto } from '../../../libs/localization';
 
 export class UpdateProductDto {
   @ApiPropertyOptional()
@@ -13,15 +17,19 @@ export class UpdateProductDto {
   @IsString()
   categoryId?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: PartialLocalizedStringDto })
   @IsOptional()
-  @IsString()
-  name?: string;
+  @IsObject()
+  @ValidateNested()
+  @Type(() => PartialLocalizedStringDto)
+  name?: PartialLocalizedStringDto;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: PartialLocalizedStringDto })
   @IsOptional()
-  @IsString()
-  description?: string;
+  @IsObject()
+  @ValidateNested()
+  @Type(() => PartialLocalizedStringDto)
+  description?: PartialLocalizedStringDto;
 
   @ApiPropertyOptional()
   @IsOptional()

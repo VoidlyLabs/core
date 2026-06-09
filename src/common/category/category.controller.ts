@@ -1,17 +1,8 @@
-import { Get, NotFoundException, Param } from '@nestjs/common';
+import { Get, Headers, NotFoundException, Param, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Category } from '../../admin/category/category.schema';
 import { CategoryService } from '../../admin/category/category.service';
 import { CommonController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
-import { MongoDocument } from '../../services/mongoose';
-
-type CategoryResponse = {
-  id: string;
-  name: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 @ApiTags('Category')
 @CommonController('category')
@@ -20,32 +11,35 @@ export class CategoryController {
 
   @Get()
   @ApiOkResponse({ description: 'Categories list' })
-  public async find() {
-    const categories = await this.categoryService.find();
-
-    return ResponseWrapper.from(
-      categories.map((category) => this.serialize(category)),
+  public async find(
+    @Query('lang') lang?: string,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    const categories = await this.categoryService.findLocalized(
+      lang,
+      acceptLanguage,
     );
+
+    return ResponseWrapper.from(categories);
   }
 
   @Get(':id')
   @ApiOkResponse({ description: 'Category details' })
-  public async findById(@Param('id') id: string) {
-    const category = await this.categoryService.findById(id);
+  public async findById(
+    @Param('id') id: string,
+    @Query('lang') lang?: string,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    const category = await this.categoryService.findByIdLocalized(
+      id,
+      lang,
+      acceptLanguage,
+    );
 
     if (!category) {
       throw new NotFoundException(ResponseWrapper.from({}, true, 'Not found'));
     }
 
-    return ResponseWrapper.from(this.serialize(category));
-  }
-
-  private serialize(category: MongoDocument<Category>): CategoryResponse {
-    return {
-      id: category._id.toString(),
-      name: category.name,
-      createdAt: category.createdAt,
-      updatedAt: category.updatedAt,
-    };
+    return ResponseWrapper.from(category);
   }
 }

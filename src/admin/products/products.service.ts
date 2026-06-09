@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { extname } from 'path';
 import { Model, UpdateQuery } from 'mongoose';
 import { Product, ProductSchema } from '../../common/products/product.schema';
+import { PartialLocalizedStringDto } from '../../libs/localization';
 import { MongoDocument, MongooseService } from '../../services/mongoose';
 import { StorageService } from '../../services/storage';
 
@@ -17,8 +18,13 @@ type CreateProductData = Pick<
   Partial<Pick<Product, 'isAvailable'>>;
 
 type UpdateProductData = Partial<
-  Pick<Product, 'categoryId' | 'name' | 'description' | 'price' | 'isAvailable'>
->;
+  Pick<Product, 'categoryId' | 'price' | 'isAvailable'>
+> & {
+  name?: PartialLocalizedStringDto;
+  description?: PartialLocalizedStringDto;
+};
+
+type ProductLocalizedField = 'name' | 'description';
 
 @Injectable()
 export class ProductsService {
@@ -56,17 +62,12 @@ export class ProductsService {
   ): Promise<MongoDocument<Product> | null> {
     const update: UpdateQuery<Product> = {};
 
-    if (typeof data.name === 'string') {
-      update.name = data.name;
-    }
-
     if (typeof data.categoryId === 'string') {
       update.categoryId = data.categoryId;
     }
 
-    if (typeof data.description === 'string') {
-      update.description = data.description;
-    }
+    this.applyLocalizedUpdate(update, 'name', data.name);
+    this.applyLocalizedUpdate(update, 'description', data.description);
 
     if (typeof data.price === 'number') {
       update.price = data.price;
@@ -152,6 +153,24 @@ export class ProductsService {
     }
 
     return true;
+  }
+
+  private applyLocalizedUpdate(
+    update: UpdateQuery<Product>,
+    field: ProductLocalizedField,
+    value?: PartialLocalizedStringDto,
+  ): void {
+    if (!value) {
+      return;
+    }
+
+    if (typeof value.uk === 'string') {
+      update[`${field}.uk`] = value.uk;
+    }
+
+    if (typeof value.en === 'string') {
+      update[`${field}.en`] = value.en;
+    }
   }
 
   private imageUrlToKey(imageUrl: string): string | null {

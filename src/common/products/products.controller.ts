@@ -2,9 +2,11 @@ import {
   BadRequestException,
   Body,
   Get,
+  Headers,
   NotFoundException,
   Param,
   Post,
+  Query,
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -18,20 +20,7 @@ import { ClientsService } from '../clients/clients.service';
 import { Order } from '../orders/order.schema';
 import { OrdersService } from '../orders/orders.service';
 import { PurchaseProductDto } from './dto/purchase-product.dto';
-import { Product } from './product.schema';
 import { ProductsService } from './products.service';
-
-type ProductResponse = {
-  id: string;
-  categoryId: string;
-  name: string;
-  description: string;
-  price: number;
-  isAvailable: boolean;
-  imageUrl: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 type OrderResponse = {
   id: string;
@@ -64,34 +53,52 @@ export class ProductsController {
 
   @Get()
   @ApiOkResponse({ description: 'Products list' })
-  public async find() {
-    const products = await this.productsService.find();
-
-    return ResponseWrapper.from(
-      products.map((product) => this.serialize(product)),
+  public async find(
+    @Query('lang') lang?: string,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    const products = await this.productsService.findLocalized(
+      lang,
+      acceptLanguage,
     );
+
+    return ResponseWrapper.from(products);
   }
 
   @Get('category/:categoryId')
   @ApiOkResponse({ description: 'Products list by category' })
-  public async findByCategoryId(@Param('categoryId') categoryId: string) {
-    const products = await this.productsService.findByCategoryId(categoryId);
-
-    return ResponseWrapper.from(
-      products.map((product) => this.serialize(product)),
+  public async findByCategoryId(
+    @Param('categoryId') categoryId: string,
+    @Query('lang') lang?: string,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    const products = await this.productsService.findByCategoryIdLocalized(
+      categoryId,
+      lang,
+      acceptLanguage,
     );
+
+    return ResponseWrapper.from(products);
   }
 
   @Get(':id')
   @ApiOkResponse({ description: 'Product details' })
-  public async findById(@Param('id') id: string) {
-    const product = await this.productsService.findById(id);
+  public async findById(
+    @Param('id') id: string,
+    @Query('lang') lang?: string,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    const product = await this.productsService.findByIdLocalized(
+      id,
+      lang,
+      acceptLanguage,
+    );
 
     if (!product) {
       throw new NotFoundException(ResponseWrapper.from({}, true, 'Not found'));
     }
 
-    return ResponseWrapper.from(this.serialize(product));
+    return ResponseWrapper.from(product);
   }
 
   @Post('purchase')
@@ -99,6 +106,8 @@ export class ProductsController {
   public async purchase(
     @Body() dto: PurchaseProductDto,
     @Req() request: Request,
+    @Query('lang') lang?: string,
+    @Headers('accept-language') acceptLanguage?: string,
   ) {
     const client = await this.authService.getAuthorizedClient(
       request.headers.authorization,
@@ -117,15 +126,13 @@ export class ProductsController {
       throw new NotFoundException(ResponseWrapper.from({}, true, 'Not found'));
     }
 
-    const productData = this.productData(product);
-
-    if (!productData.isAvailable) {
+    if (!product.isAvailable) {
       throw new BadRequestException(
         ResponseWrapper.from({}, true, 'Product is not available'),
       );
     }
 
-    const totalPrice = productData.price * dto.quantity;
+    const totalPrice = product.price * dto.quantity;
 
     if (totalPrice > 0) {
       const debitedClient = await this.clientsService.debitBalanceIfSufficient(
@@ -145,15 +152,12 @@ export class ProductsController {
     try {
       order = await this.ordersService.create({
         clientId: client.id,
-        productId: productData._id.toString(),
-        product: {
-          id: productData._id.toString(),
-          categoryId: productData.categoryId,
-          name: productData.name,
-          description: productData.description,
-          price: productData.price,
-          imageUrl: productData.imageUrl ?? '',
-        },
+        productId: product._id.toString(),
+        product: this.productsService.toOrderSnapshot(
+          product,
+          lang,
+          acceptLanguage,
+        ),
         quantity: dto.quantity,
         totalPrice,
         status: 'pending',
@@ -171,20 +175,6 @@ export class ProductsController {
     return ResponseWrapper.from(this.serializeOrder(order), false, 'Created');
   }
 
-  private serialize(product: MongoDocument<Product>): ProductResponse {
-    return {
-      id: product._id.toString(),
-      categoryId: product.categoryId,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      isAvailable: product.isAvailable,
-      imageUrl: product.imageUrl ?? '',
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt,
-    };
-  }
-
   private serializeOrder(order: MongoDocument<Order>): OrderResponse {
     return {
       id: order._id.toString(),
@@ -197,9 +187,5 @@ export class ProductsController {
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
     };
-  }
-
-  private productData(product: MongoDocument<Product>): MongoDocument<Product> {
-    return product;
   }
 }

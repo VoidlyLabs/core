@@ -1,8 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsObject, IsOptional, ValidateNested } from 'class-validator';
+import { PartialLocalizedStringDto } from '../../../libs/localization';
 
 export class UpdateCategoryDto {
-  @ApiProperty()
-  @IsString()
-  name: string;
+  @ApiPropertyOptional({ type: PartialLocalizedStringDto })
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => PartialLocalizedStringDto)
+  name?: PartialLocalizedStringDto;
 }

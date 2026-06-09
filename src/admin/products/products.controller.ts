@@ -20,6 +20,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
+import { LocalizedString } from '../../libs/localization';
 import { MongoDocument } from '../../services/mongoose';
 import { Product } from '../../common/products/product.schema';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -29,8 +30,8 @@ import { ProductsService } from './products.service';
 type ProductResponse = {
   id: string;
   categoryId: string;
-  name: string;
-  description: string;
+  name: LocalizedString;
+  description: LocalizedString;
   price: number;
   isAvailable: boolean;
   imageUrl: string;

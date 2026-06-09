@@ -1,13 +1,17 @@
 import {
   Body,
   Delete,
+  Get,
+  Headers,
   NotFoundException,
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { AdminController } from '../../decorators/controller/controller.decorator';
+import { LocalizedString } from '../../libs/localization';
 import { ResponseWrapper } from '../../libs/response';
 import { MongoDocument } from '../../services/mongoose';
 import { Category } from './category.schema';
@@ -17,7 +21,7 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 
 type CategoryResponse = {
   id: string;
-  name: string;
+  name: LocalizedString;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -26,6 +30,22 @@ type CategoryResponse = {
 @AdminController('category')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
+
+  @Get()
+  @ApiOkResponse({ description: 'Categories list' })
+  public async find() {
+    const categories = await this.categoryService.find();
+
+    return ResponseWrapper.from(categories);
+  }
+
+  @Get(':id')
+  @ApiOkResponse({ description: 'Categories list' })
+  public async findById(@Param('id') id: string) {
+    const categories = await this.categoryService.findById(id);
+
+    return ResponseWrapper.from(categories);
+  }
 
   @Post()
   @ApiCreatedResponse({ description: 'Category created' })
