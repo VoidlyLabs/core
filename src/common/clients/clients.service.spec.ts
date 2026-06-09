@@ -20,7 +20,9 @@ describe('ClientsService', () => {
       find: jest.fn(),
       findOne: jest.fn(),
       findById: jest.fn(),
-      create: jest.fn(async (_model, data) => ({ _id: 'client-id', ...data })),
+      create: jest.fn((_model, data) =>
+        Promise.resolve({ _id: 'client-id', ...data }),
+      ),
       updateOne: jest.fn(),
       deleteById: jest.fn(),
     };
@@ -54,8 +56,8 @@ describe('ClientsService', () => {
   });
 
   it('hashes password on update but preserves non-password fields', async () => {
-    mongooseService.updateOne.mockImplementation(
-      async (_model, _filter, data) => data,
+    mongooseService.updateOne.mockImplementation((_model, _filter, data) =>
+      Promise.resolve(data),
     );
 
     const updated = await service.update('client-id', {
