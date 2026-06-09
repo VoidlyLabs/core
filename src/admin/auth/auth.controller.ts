@@ -15,7 +15,7 @@ import {
 import { ResponseWrapper } from '../../libs/response';
 import { AuthService } from './auth.service';
 import { UserSignInDto } from './dto/user-sign-in.dto';
-import { ConfigUtility } from '../../utility/config/config.utility';
+import { ConfigUtility } from '../../libs/config/config.utility';
 
 const USER_TOKEN_COOKIE = 'user_access_token';
 

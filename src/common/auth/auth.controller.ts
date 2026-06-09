@@ -12,7 +12,7 @@ import { CommonController } from '../../decorators/controller/controller.decorat
 import { ResponseWrapper } from '../../libs/response';
 import { AuthService } from './auth.service';
 import { ClientSignInDto } from './dto/client-sign-in.dto';
-import { ConfigUtility } from '../../utility/config/config.utility';
+import { ConfigUtility } from '../../libs/config/config.utility';
 import { ClientSignUpDto } from './dto/client-sign-up.dto';
 
 @ApiTags('Clients Authorization')

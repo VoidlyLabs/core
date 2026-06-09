@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ClientsModule } from '../clients/clients.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { ConfigUtility } from '../../utility/config/config.utility';
+import { ConfigUtility } from '../../libs/config/config.utility';
 
 @Module({
   imports: [ClientsModule],

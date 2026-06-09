@@ -3,7 +3,7 @@ import { hash } from 'bcryptjs';
 import { Model, QueryFilter, UpdateQuery } from 'mongoose';
 import { MongoDocument, MongooseService } from '../../services/mongoose';
 import { User, UserSchema } from './user.schema';
-import { ConfigUtility } from '../../utility/config/config.utility';
+import { ConfigUtility } from '../../libs/config/config.utility';
 
 @Injectable()
 export class UsersService {

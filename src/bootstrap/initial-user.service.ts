@@ -2,7 +2,7 @@ import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { UsersService } from '../admin/users/users.service';
 import { MongooseService } from '../services/mongoose';
-import { ConfigUtility } from '../utility/config/config.utility';
+import { ConfigUtility } from '../libs/config/config.utility';
 import {
   BootstrapMarker,
   BootstrapMarkerSchema,

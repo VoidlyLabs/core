@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'fs/promises';
 import { dirname, extname, join, normalize, relative, sep } from 'path';
 import { Injectable } from '@nestjs/common';
-import { ConfigUtility } from '../../utility/config/config.utility';
+import { ConfigUtility } from '../../libs/config/config.utility';
 
 type StorageBody = Buffer | Uint8Array | string;
 

@@ -18,7 +18,7 @@ import {
   Types,
   UpdateQuery,
 } from 'mongoose';
-import { ConfigUtility } from '../../utility/config/config.utility';
+import { ConfigUtility } from '../../libs/config/config.utility';
 
 type ModelOptions = {
   collection?: string;
