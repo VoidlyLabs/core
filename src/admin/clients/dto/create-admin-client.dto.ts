@@ -7,7 +7,7 @@ import {
   MinLength,
 } from 'class-validator';
 
-export class CreateClientDto {
+export class CreateAdminClientDto {
   @ApiProperty()
   @IsString()
   username: string;

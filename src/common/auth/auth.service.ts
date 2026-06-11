@@ -7,7 +7,7 @@ import { compare } from 'bcryptjs';
 import { ResponseWrapper } from '../../libs/response';
 import { JwtUtility } from '../../libs/jwt/jwt.utility';
 import { MongoDocument } from '../../services/mongoose';
-import { ClientsService } from '../clients/clients.service';
+import { ClientsService as AdminClientsService } from '../../admin/clients/clients.service';
 import { Client } from '../clients/client.schema';
 import { ClientSignInDto } from './dto/client-sign-in.dto';
 import { ClientSignUpDto } from './dto/client-sign-up.dto';
@@ -31,7 +31,7 @@ type AuthorizedClientResult = {
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly clientService: ClientsService) {}
+  constructor(private readonly clientService: AdminClientsService) {}
 
   public async signUpClient(dto: ClientSignUpDto): Promise<ClientSignInResult> {
     const existingClient = await this.clientService.findByUsername(

@@ -20,24 +20,9 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminController } from '../../decorators/controller/controller.decorator';
 import { ResponseWrapper } from '../../libs/response';
-import { LocalizedString } from '../../libs/localization';
-import { MongoDocument } from '../../services/mongoose';
-import { Product } from '../../common/products/product.schema';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductsService } from './products.service';
-
-type ProductResponse = {
-  id: string;
-  categoryId: string;
-  name: LocalizedString;
-  description: LocalizedString;
-  price: number;
-  isAvailable: boolean;
-  imageUrl: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 type UploadedProductImageFile = {
   originalname: string;
@@ -55,9 +40,7 @@ export class ProductsController {
   public async find() {
     const products = await this.productsService.find();
 
-    return ResponseWrapper.from(
-      products.map((product) => this.serialize(product)),
-    );
+    return ResponseWrapper.from(products);
   }
 
   @Get(':id')
@@ -69,7 +52,7 @@ export class ProductsController {
       throw new NotFoundException(ResponseWrapper.from({}, true, 'Not found'));
     }
 
-    return ResponseWrapper.from(this.serialize(product));
+    return ResponseWrapper.from(product);
   }
 
   @Post()
@@ -77,7 +60,7 @@ export class ProductsController {
   public async create(@Body() dto: CreateProductDto) {
     const product = await this.productsService.create(dto);
 
-    return ResponseWrapper.from(this.serialize(product), false, 'Created');
+    return ResponseWrapper.from(product, false, 'Created');
   }
 
   @Post(':id/image')
@@ -118,7 +101,7 @@ export class ProductsController {
       throw new NotFoundException(ResponseWrapper.from({}, true, 'Not found'));
     }
 
-    return ResponseWrapper.from(this.serialize(product), false, 'Created');
+    return ResponseWrapper.from(product, false, 'Created');
   }
 
   @Patch(':id')
@@ -130,7 +113,7 @@ export class ProductsController {
       throw new NotFoundException(ResponseWrapper.from({}, true, 'Not found'));
     }
 
-    return ResponseWrapper.from(this.serialize(product));
+    return ResponseWrapper.from(product);
   }
 
   @Delete(':id/image')
@@ -142,7 +125,7 @@ export class ProductsController {
       throw new NotFoundException(ResponseWrapper.from({}, true, 'Not found'));
     }
 
-    return ResponseWrapper.from(this.serialize(product));
+    return ResponseWrapper.from(product);
   }
 
   @Delete(':id')
@@ -155,19 +138,5 @@ export class ProductsController {
     }
 
     return ResponseWrapper.from({ deleted });
-  }
-
-  private serialize(product: MongoDocument<Product>): ProductResponse {
-    return {
-      id: product._id.toString(),
-      categoryId: product.categoryId,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      isAvailable: product.isAvailable,
-      imageUrl: product.imageUrl ?? '',
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt,
-    };
   }
 }

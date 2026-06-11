@@ -4,6 +4,7 @@ import { CategoryModule } from './category/category.module';
 import { ConfigurationModule } from './configuration/configuration.module';
 import { ProductsModule } from './products/products.module';
 import { UsersModule } from './users/users.module';
+import { ClientsModule } from './clients/clients.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { UsersModule } from './users/users.module';
     ConfigurationModule,
     CategoryModule,
     ProductsModule,
+    ClientsModule,
   ],
 })
 export class AdminModule {}

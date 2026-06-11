@@ -17,26 +17,10 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminController } from '../../decorators/controller/controller.decorator';
-import { LocalizedString } from '../../libs/localization';
 import { ResponseWrapper } from '../../libs/response';
-import { MongoDocument } from '../../services/mongoose';
 import { Configuration } from './configuration.schema';
 import { ConfigurationService } from './configuration.service';
 import { UpdateConfigurationDto } from './dto/update-configuration.dto';
-
-type ConfigurationResponse = {
-  id: string;
-  name: LocalizedString;
-  description: LocalizedString;
-  logoUrl: string;
-  accentColor: string;
-  backgroundColor: string;
-  secondaryColor: string;
-  phoneNumber: string;
-  email: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 type UploadedLogoFile = {
   originalname: string;
@@ -54,7 +38,7 @@ export class ConfigurationController {
   public async find() {
     const configuration = await this.configurationService.get();
 
-    return ResponseWrapper.from(this.serialize(configuration));
+    return ResponseWrapper.from(configuration);
   }
 
   @Patch()
@@ -62,7 +46,7 @@ export class ConfigurationController {
   public async update(@Body() dto: UpdateConfigurationDto) {
     const configuration = await this.configurationService.update(dto);
 
-    return ResponseWrapper.from(this.serialize(configuration));
+    return ResponseWrapper.from(configuration);
   }
 
   @Post('logo')
@@ -96,11 +80,7 @@ export class ConfigurationController {
 
     const configuration = await this.configurationService.updateLogo(file);
 
-    return ResponseWrapper.from(
-      this.serialize(configuration),
-      false,
-      'Created',
-    );
+    return ResponseWrapper.from(configuration, false, 'Created');
   }
 
   @Delete('logo')
@@ -108,24 +88,6 @@ export class ConfigurationController {
   public async deleteLogo() {
     const configuration = await this.configurationService.deleteLogo();
 
-    return ResponseWrapper.from(this.serialize(configuration));
-  }
-
-  private serialize(
-    configuration: MongoDocument<Configuration>,
-  ): ConfigurationResponse {
-    return {
-      id: configuration._id.toString(),
-      name: configuration.name,
-      description: configuration.description,
-      logoUrl: configuration.logoUrl,
-      accentColor: configuration.accentColor,
-      backgroundColor: configuration.backgroundColor,
-      secondaryColor: configuration.secondaryColor,
-      phoneNumber: configuration.phoneNumber,
-      email: configuration.email,
-      createdAt: configuration.createdAt,
-      updatedAt: configuration.updatedAt,
-    };
+    return ResponseWrapper.from(configuration);
   }
 }

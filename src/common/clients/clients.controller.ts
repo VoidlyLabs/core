@@ -1,20 +1,12 @@
-import {
-  Body,
-  Delete,
-  Get,
-  NotFoundException,
-  Param,
-  Patch,
-  Post,
-} from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Get, Req, UnauthorizedException } from '@nestjs/common';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
 import { CommonController } from '../../decorators/controller/controller.decorator';
+import { JwtUtility } from '../../libs/jwt/jwt.utility';
 import { ResponseWrapper } from '../../libs/response';
 import { MongoDocument } from '../../services/mongoose';
 import { Client } from './client.schema';
 import { ClientsService } from './clients.service';
-import { CreateClientDto } from './dto/create-client.dto';
-import { UpdateClientDto } from './dto/update-client.dto';
 
 type ClientResponse = {
   id: string;
@@ -29,67 +21,27 @@ type ClientResponse = {
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
-  @Get()
-  @ApiOkResponse({ description: 'Clients list' })
-  public async find() {
-    const clients = await this.clientsService.find();
+  @Get('me')
+  @ApiOkResponse({ description: 'Current client details' })
+  public async me(@Req() request: Request) {
+    const id = request.headers.authorization?.startsWith('Bearer ')
+      ? await JwtUtility.clientIdFromHeader(request.headers.authorization)
+      : await JwtUtility.clientIdFromCookieHeader(request.headers.cookie);
 
-    return ResponseWrapper.from(
-      clients.map((client) => this.serialize(client)),
-    );
-  }
+    if (!id) {
+      throw new UnauthorizedException(
+        ResponseWrapper.from({}, true, 'Unauthorized'),
+      );
+    }
 
-  @Get(':id')
-  @ApiOkResponse({ description: 'Client details' })
-  public async findById(@Param('id') id: string) {
     const client = await this.clientsService.findById(id);
 
     if (!client) {
-      throw new NotFoundException(ResponseWrapper.from({}, true, 'Not found'));
+      throw new UnauthorizedException(
+        ResponseWrapper.from({}, true, 'Unauthorized'),
+      );
     }
 
-    return ResponseWrapper.from(this.serialize(client));
-  }
-
-  @Post()
-  @ApiCreatedResponse({ description: 'Client created' })
-  public async create(@Body() dto: CreateClientDto) {
-    const client = await this.clientsService.create(dto);
-
-    return ResponseWrapper.from(this.serialize(client), false, 'Created');
-  }
-
-  @Patch(':id')
-  @ApiOkResponse({ description: 'Client updated' })
-  public async update(@Param('id') id: string, @Body() dto: UpdateClientDto) {
-    const client = await this.clientsService.update(id, dto);
-
-    if (!client) {
-      throw new NotFoundException(ResponseWrapper.from({}, true, 'Not found'));
-    }
-
-    return ResponseWrapper.from(this.serialize(client));
-  }
-
-  @Delete(':id')
-  @ApiOkResponse({ description: 'Client deleted' })
-  public async deleteById(@Param('id') id: string) {
-    const deleted = await this.clientsService.deleteById(id);
-
-    if (!deleted) {
-      throw new NotFoundException(ResponseWrapper.from({}, true, 'Not found'));
-    }
-
-    return ResponseWrapper.from({ deleted });
-  }
-
-  private serialize(client: MongoDocument<Client>): ClientResponse {
-    return {
-      id: client._id.toString(),
-      username: client.username,
-      balance: client.balance ?? 0,
-      createdAt: client.createdAt,
-      updatedAt: client.updatedAt,
-    };
+    return ResponseWrapper.from(client);
   }
 }

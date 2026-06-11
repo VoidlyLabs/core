@@ -2,29 +2,17 @@ import {
   Body,
   Delete,
   Get,
-  Headers,
   NotFoundException,
   Param,
   Patch,
   Post,
-  Query,
 } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { AdminController } from '../../decorators/controller/controller.decorator';
-import { LocalizedString } from '../../libs/localization';
 import { ResponseWrapper } from '../../libs/response';
-import { MongoDocument } from '../../services/mongoose';
-import { Category } from './category.schema';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-
-type CategoryResponse = {
-  id: string;
-  name: LocalizedString;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 @ApiTags('Category')
 @AdminController('category')
@@ -52,7 +40,7 @@ export class CategoryController {
   public async create(@Body() dto: CreateCategoryDto) {
     const category = await this.categoryService.create(dto);
 
-    return ResponseWrapper.from(this.serialize(category), false, 'Created');
+    return ResponseWrapper.from(category, false, 'Created');
   }
 
   @Patch(':id')
@@ -64,7 +52,7 @@ export class CategoryController {
       throw new NotFoundException(ResponseWrapper.from({}, true, 'Not found'));
     }
 
-    return ResponseWrapper.from(this.serialize(category));
+    return ResponseWrapper.from(category);
   }
 
   @Delete(':id')
@@ -77,14 +65,5 @@ export class CategoryController {
     }
 
     return ResponseWrapper.from({ deleted });
-  }
-
-  private serialize(category: MongoDocument<Category>): CategoryResponse {
-    return {
-      id: category._id.toString(),
-      name: category.name,
-      createdAt: category.createdAt,
-      updatedAt: category.updatedAt,
-    };
   }
 }
